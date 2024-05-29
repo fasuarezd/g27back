@@ -3,7 +3,7 @@ const Tarea = require('../models/tareaModel')
 
 const getTareas = asyncHandler(async (req, res) => {
 
-    const tareas = await Tarea.find()
+    const tareas = await Tarea.find({ user: req.user.id })
 
     res.status(200).json(tareas)
 })
@@ -16,7 +16,8 @@ const crearTareas = asyncHandler(async (req, res) => {
     }
 
     const tarea = await Tarea.create({
-        texto: req.body.texto
+        texto: req.body.texto,
+        user: req.user.id
     })
 
     res.status(201).json(tarea)
@@ -24,6 +25,7 @@ const crearTareas = asyncHandler(async (req, res) => {
 
 const updateTareas = asyncHandler(async (req, res) => {
 
+    //1 verificamos que la tarea existe
     const tarea = await Tarea.findById(req.params.id)
 
     if (!tarea) {
@@ -31,13 +33,20 @@ const updateTareas = asyncHandler(async (req, res) => {
         throw new Error("La tarea especificada no existe")
     }
 
-    const tareaUpdated = await Tarea.findByIdAndUpdate(req.params.id, req.body, { new: true })
 
-    res.status(200).json(tareaUpdated)
+    //2 verificamos que la tarea pertenezca al usuario logueado
+    if (tarea.user.toString() !== req.user.id) {
+        res.status(401)
+        throw new Error('Acceso no autorizado')
+    } else {
+        const tareaUpdated = await Tarea.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        res.status(200).json(tareaUpdated)
+    }
 })
 
 const deleteTareas = asyncHandler(async (req, res) => {
 
+    //1 verificamos que la tarea existe
     const tarea = await Tarea.findById(req.params.id)
 
     if (!tarea) {
@@ -45,10 +54,15 @@ const deleteTareas = asyncHandler(async (req, res) => {
         throw new Error("La tarea especificada no existe")
     }
 
-    //const tareaDeleted = await Tarea.findByIdAndDelete(req.params.id)
-    await tarea.deleteOne()
-
-    res.status(200).json({ id: req.params.id })
+    //2 verificamos que la tarea pertenezca al usuario logueado
+    if (tarea.user.toString() !== req.user.id) {
+        res.status(401)
+        throw new Error('Acceso no autorizado')
+    } else {
+        //const tareaDeleted = await Tarea.findByIdAndDelete(req.params.id)
+        await tarea.deleteOne()
+        res.status(200).json({ id: req.params.id })
+    }
 })
 
 module.exports = {
