@@ -6,7 +6,7 @@ const cors = require('cors')
 const connectDB = require('./config/db')
 const port = process.env.PORT || 5000
 
-//comentario
+//comentarios
 
 connectDB()
 
